@@ -1,5 +1,5 @@
-use arrow_array::{ArrayRef, RecordBatch};
-use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
+use arrow_array::RecordBatch;
+use parquet::arrow::arrow_reader::{ParquetRecordBatchReaderBuilder, RowSelection, RowSelector};
 use parquet::arrow::arrow_writer::ArrowWriter;
 use parquet::basic::Compression;
 use parquet::file::properties::WriterProperties;
@@ -31,37 +31,59 @@ pub fn read_bytes(bytes: &[u8]) -> Vec<RecordBatch> {
 }
 
 pub fn take_rows_from_bytes(bytes: &[u8], indices: &[usize]) -> RecordBatch {
-    // Parquet doesn't have efficient random access, so we read all and filter
-    let batches = read_bytes(bytes);
+    let file = bytes::Bytes::from(bytes.to_vec());
+    let mut reader_builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
 
-    // Concatenate all batches into a single batch
-    let schema = batches[0].schema();
-    let mut all_columns: Vec<Vec<ArrayRef>> = vec![vec![]; schema.fields().len()];
+    // Get metadata to know total rows
+    let metadata = reader_builder.metadata();
+    let total_rows = metadata.file_metadata().num_rows() as usize;
+    let schema = reader_builder.schema().clone();
 
-    for batch in &batches {
-        for (i, column) in batch.columns().iter().enumerate() {
-            all_columns[i].push(column.clone());
+    // Convert indices to a sorted, deduplicated list (required for RowSelection)
+    let mut sorted_indices = indices.to_vec();
+    sorted_indices.sort_unstable();
+    sorted_indices.dedup();
+
+    // Build RowSelection from indices
+    let mut selectors = Vec::new();
+    let mut current_pos = 0;
+
+    for &idx in &sorted_indices {
+        if idx >= total_rows {
+            continue;
         }
+
+        // Skip rows before this index
+        if idx > current_pos {
+            selectors.push(RowSelector::skip(idx - current_pos));
+            current_pos = idx;
+        }
+
+        // Select this row
+        selectors.push(RowSelector::select(1));
+        current_pos += 1;
     }
 
-    let concatenated_columns: Vec<ArrayRef> = all_columns
-        .into_iter()
-        .map(|columns| {
-            arrow::compute::concat(&columns.iter().map(|a| a.as_ref()).collect::<Vec<_>>()).unwrap()
-        })
-        .collect();
+    // Skip any remaining rows
+    if current_pos < total_rows {
+        selectors.push(RowSelector::skip(total_rows - current_pos));
+    }
 
-    let concatenated_batch = RecordBatch::try_new(schema.clone(), concatenated_columns).unwrap();
+    let row_selection = RowSelection::from(selectors);
 
-    // Now perform take on the concatenated batch
-    let indices_array =
-        arrow_array::UInt32Array::from(indices.iter().map(|&i| i as u32).collect::<Vec<_>>());
+    // Apply row selection and build reader
+    reader_builder = reader_builder.with_row_selection(row_selection);
+    let reader = reader_builder.build().unwrap();
 
-    let arrays = concatenated_batch
-        .columns()
-        .iter()
-        .map(|col| arrow::compute::take(col, &indices_array, None).unwrap())
-        .collect();
+    // Read the selected rows
+    let batches: Vec<RecordBatch> = reader.collect::<Result<Vec<_>, _>>().unwrap();
 
-    RecordBatch::try_new(schema, arrays).unwrap()
+    // Concatenate if multiple batches
+    if batches.len() == 1 {
+        batches.into_iter().next().unwrap()
+    } else if batches.is_empty() {
+        RecordBatch::new_empty(schema)
+    } else {
+        arrow_select::concat::concat_batches(&batches[0].schema(), &batches).unwrap()
+    }
 }
