@@ -225,18 +225,18 @@ bench_read!(read_1m_low_rep_100, "read/1m/low_rep_100pct", 1_000_000, LOW_REP_10
 bench_read!(read_1m_low_rep_90, "read/1m/low_rep_90pct", 1_000_000, LOW_REP_90);
 bench_read!(read_1m_low_rep_50, "read/1m/low_rep_50pct", 1_000_000, LOW_REP_50);
 
-// Take benchmarks - 100K elements, 10% take
-bench_take!(take_100k_high_rep_99, "take/100k/high_rep_99pct/10pct", 100_000, HIGH_REP_99, 0.1);
-bench_take!(take_100k_high_rep_95, "take/100k/high_rep_95pct/10pct", 100_000, HIGH_REP_95, 0.1);
-bench_take!(take_100k_high_rep_90, "take/100k/high_rep_90pct/10pct", 100_000, HIGH_REP_90, 0.1);
-bench_take!(take_100k_low_rep_100, "take/100k/low_rep_100pct/10pct", 100_000, LOW_REP_100, 0.1);
-bench_take!(take_100k_low_rep_90, "take/100k/low_rep_90pct/10pct", 100_000, LOW_REP_90, 0.1);
-bench_take!(take_100k_low_rep_50, "take/100k/low_rep_50pct/10pct", 100_000, LOW_REP_50, 0.1);
+// Take benchmarks - 100K elements, single row
+bench_take!(take_100k_high_rep_99, "take/100k/high_rep_99pct/single", 100_000, HIGH_REP_99, 0.1);
+bench_take!(take_100k_high_rep_95, "take/100k/high_rep_95pct/single", 100_000, HIGH_REP_95, 0.1);
+bench_take!(take_100k_high_rep_90, "take/100k/high_rep_90pct/single", 100_000, HIGH_REP_90, 0.1);
+bench_take!(take_100k_low_rep_100, "take/100k/low_rep_100pct/single", 100_000, LOW_REP_100, 0.1);
+bench_take!(take_100k_low_rep_90, "take/100k/low_rep_90pct/single", 100_000, LOW_REP_90, 0.1);
+bench_take!(take_100k_low_rep_50, "take/100k/low_rep_50pct/single", 100_000, LOW_REP_50, 0.1);
 
-// Take benchmarks - 1M elements, 10% take
-bench_take!(take_1m_high_rep_99, "take/1m/high_rep_99pct/10pct", 1_000_000, HIGH_REP_99, 0.1);
-bench_take!(take_1m_high_rep_95, "take/1m/high_rep_95pct/10pct", 1_000_000, HIGH_REP_95, 0.1);
-bench_take!(take_1m_high_rep_90, "take/1m/high_rep_90pct/10pct", 1_000_000, HIGH_REP_90, 0.1);
-bench_take!(take_1m_low_rep_100, "take/1m/low_rep_100pct/10pct", 1_000_000, LOW_REP_100, 0.1);
-bench_take!(take_1m_low_rep_90, "take/1m/low_rep_90pct/10pct", 1_000_000, LOW_REP_90, 0.1);
-bench_take!(take_1m_low_rep_50, "take/1m/low_rep_50pct/10pct", 1_000_000, LOW_REP_50, 0.1);
+// Take benchmarks - 1M elements, single row
+bench_take!(take_1m_high_rep_99, "take/1m/high_rep_99pct/single", 1_000_000, HIGH_REP_99, 0.1);
+bench_take!(take_1m_high_rep_95, "take/1m/high_rep_95pct/single", 1_000_000, HIGH_REP_95, 0.1);
+bench_take!(take_1m_high_rep_90, "take/1m/high_rep_90pct/single", 1_000_000, HIGH_REP_90, 0.1);
+bench_take!(take_1m_low_rep_100, "take/1m/low_rep_100pct/single", 1_000_000, LOW_REP_100, 0.1);
+bench_take!(take_1m_low_rep_90, "take/1m/low_rep_90pct/single", 1_000_000, LOW_REP_90, 0.1);
+bench_take!(take_1m_low_rep_50, "take/1m/low_rep_50pct/single", 1_000_000, LOW_REP_50, 0.1);

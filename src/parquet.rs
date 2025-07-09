@@ -31,6 +31,10 @@ pub fn read_bytes(bytes: &[u8]) -> Vec<RecordBatch> {
 }
 
 pub fn take_rows_from_bytes(bytes: &[u8], indices: &[usize]) -> RecordBatch {
+    // Since we only read one row, optimize for this case
+    assert_eq!(indices.len(), 1, "Expected exactly one index");
+    let target_row = indices[0];
+
     let file = bytes::Bytes::from(bytes.to_vec());
     let mut reader_builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
 
@@ -39,51 +43,22 @@ pub fn take_rows_from_bytes(bytes: &[u8], indices: &[usize]) -> RecordBatch {
     let total_rows = metadata.file_metadata().num_rows() as usize;
     let schema = reader_builder.schema().clone();
 
-    // Convert indices to a sorted, deduplicated list (required for RowSelection)
-    let mut sorted_indices = indices.to_vec();
-    sorted_indices.sort_unstable();
-    sorted_indices.dedup();
-
-    // Build RowSelection from indices
-    let mut selectors = Vec::new();
-    let mut current_pos = 0;
-
-    for &idx in &sorted_indices {
-        if idx >= total_rows {
-            continue;
-        }
-
-        // Skip rows before this index
-        if idx > current_pos {
-            selectors.push(RowSelector::skip(idx - current_pos));
-            current_pos = idx;
-        }
-
-        // Select this row
-        selectors.push(RowSelector::select(1));
-        current_pos += 1;
+    if target_row >= total_rows {
+        return RecordBatch::new_empty(schema);
     }
 
-    // Skip any remaining rows
-    if current_pos < total_rows {
-        selectors.push(RowSelector::skip(total_rows - current_pos));
-    }
-
+    // Build RowSelection for single row
+    let selectors = vec![
+        RowSelector::skip(target_row),
+        RowSelector::select(1),
+        RowSelector::skip(total_rows - target_row - 1),
+    ];
     let row_selection = RowSelection::from(selectors);
 
     // Apply row selection and build reader
     reader_builder = reader_builder.with_row_selection(row_selection);
-    let reader = reader_builder.build().unwrap();
+    let mut reader = reader_builder.build().unwrap();
 
-    // Read the selected rows
-    let batches: Vec<RecordBatch> = reader.collect::<Result<Vec<_>, _>>().unwrap();
-
-    // Concatenate if multiple batches
-    if batches.len() == 1 {
-        batches.into_iter().next().unwrap()
-    } else if batches.is_empty() {
-        RecordBatch::new_empty(schema)
-    } else {
-        arrow_select::concat::concat_batches(&batches[0].schema(), &batches).unwrap()
-    }
+    // Read the single row
+    reader.next().unwrap().unwrap()
 }

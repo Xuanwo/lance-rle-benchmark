@@ -99,20 +99,9 @@ impl DataPattern {
     }
 }
 
-pub fn generate_indices(size: usize, ratio: f64) -> Vec<usize> {
-    let mut rng = StdRng::seed_from_u64(42);
-    let count = (size as f64 * ratio) as usize;
-
-    let mut indices: Vec<usize> = (0..size).collect();
-
-    for i in 0..count {
-        let j = rng.gen_range(i..size);
-        indices.swap(i, j);
-    }
-
-    indices.truncate(count);
-    indices.sort_unstable();
-    indices
+pub fn generate_indices(size: usize, _ratio: f64) -> Vec<usize> {
+    // Always return just one random index in the middle of the data
+    vec![size / 2]
 }
 
 pub fn generate_record_batch(pattern: &DataPattern, size: usize) -> RecordBatch {

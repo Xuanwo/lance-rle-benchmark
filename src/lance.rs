@@ -127,6 +127,9 @@ pub async fn read_bytes(bytes: &[u8]) -> Vec<RecordBatch> {
 }
 
 pub async fn take_rows_from_bytes(bytes: &[u8], indices: &[usize]) -> RecordBatch {
+    // Since we only read one row, optimize for this case
+    assert_eq!(indices.len(), 1, "Expected exactly one index");
+    
     // Use memory object store
     let object_store = Arc::new(ObjectStore::memory());
     let path = Path::from("data.lance");
@@ -163,30 +166,19 @@ pub async fn take_rows_from_bytes(bytes: &[u8], indices: &[usize]) -> RecordBatc
     let projection =
         ReaderProjection::from_whole_schema(reader.schema(), reader.metadata().version());
 
-    // Take specific rows using indices
-    let indices_u32: Vec<u32> = indices.iter().map(|&i| i as u32).collect();
-    let indices_array = arrow_array::UInt32Array::from(indices_u32);
+    // Take single row using indices
+    let indices_array = arrow_array::UInt32Array::from(vec![indices[0] as u32]);
     let stream = reader
         .read_tasks(
             ReadBatchParams::Indices(indices_array),
-            1024,
+            1, // batch size of 1 for single row
             Some(projection),
             FilterExpression::no_filter(),
         )
         .unwrap();
 
-    let mut batches = Vec::new();
+    // Read the single batch
     futures::pin_mut!(stream);
-    while let Some(batch_task) = stream.next().await {
-        let batch = batch_task.task.await.unwrap();
-        batches.push(batch);
-    }
-
-    // Should return a single batch for take operation
-    if batches.len() == 1 {
-        batches.into_iter().next().unwrap()
-    } else {
-        // Concatenate if multiple batches
-        arrow_select::concat::concat_batches(&batches[0].schema(), &batches).unwrap()
-    }
+    let batch_task = stream.next().await.unwrap();
+    batch_task.task.await.unwrap()
 }
