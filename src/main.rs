@@ -1,6 +1,4 @@
 use lance_rle_benchmark::{data::*, lance, parquet};
-use std::fs;
-use std::path::Path;
 use tabled::{Table, Tabled};
 use tokio::runtime::Runtime;
 
@@ -39,17 +37,17 @@ fn main() {
             let batch = generate_record_batch(&pattern, size);
             let original_size = size * 4; // i32 = 4 bytes
 
-            // Lance default
-            let (_temp_dir, uri) = rt.block_on(lance::write_file(batch.clone(), false, false));
-            let lance_size = get_dir_size(&uri);
+            // Lance default (bitpacking)
+            let lance_bytes = rt.block_on(lance::write_bytes(batch.clone(), false, false));
+            let lance_size = lance_bytes.len();
 
             // Lance with RLE
-            let (_temp_dir2, uri2) = rt.block_on(lance::write_file(batch.clone(), false, true));
-            let lance_rle_size = get_dir_size(&uri2);
+            let lance_rle_bytes = rt.block_on(lance::write_bytes(batch.clone(), false, true));
+            let lance_rle_size = lance_rle_bytes.len();
 
             // Parquet
-            let (_temp_dir3, path) = parquet::write_file(batch);
-            let parquet_size = fs::metadata(&path).map(|m| m.len() as usize).unwrap_or(0);
+            let parquet_bytes = parquet::write_bytes(batch);
+            let parquet_size = parquet_bytes.len();
 
             rows.push(CompressionRow {
                 pattern: pattern.name().to_string(),
@@ -66,38 +64,4 @@ fn main() {
 
     let table = Table::new(rows);
     println!("{table}");
-}
-
-fn get_dir_size(path: &str) -> usize {
-    let path = path.replace("file://", "");
-    let path = Path::new(&path);
-
-    if path.is_file() {
-        fs::metadata(path).map(|m| m.len() as usize).unwrap_or(0)
-    } else if path.is_dir() {
-        get_dir_size_recursive(path)
-    } else {
-        0
-    }
-}
-
-fn get_dir_size_recursive(dir: &Path) -> usize {
-    let mut total_size = 0;
-    
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.filter_map(Result::ok) {
-            let path = entry.path();
-            let metadata = fs::metadata(&path).ok();
-            
-            if let Some(metadata) = metadata {
-                if metadata.is_file() {
-                    total_size += metadata.len() as usize;
-                } else if metadata.is_dir() {
-                    total_size += get_dir_size_recursive(&path);
-                }
-            }
-        }
-    }
-    
-    total_size
 }

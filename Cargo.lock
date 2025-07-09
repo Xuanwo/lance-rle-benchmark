@@ -3054,7 +3054,6 @@ dependencies = [
  "parquet",
  "rand 0.8.5",
  "tabled",
- "tempfile",
  "tokio",
 ]
 
