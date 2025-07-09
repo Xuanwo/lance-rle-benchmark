@@ -1,0 +1,26 @@
+[package]
+name = "lance-rle-benchmark"
+version = "0.1.0"
+edition = "2021"
+
+[[bench]]
+name = "main"
+harness = false
+
+[dependencies]
+lance = { path = "../lance-4060-rle/rust/lance" }
+lance-core = { path = "../lance-4060-rle/rust/lance-core" }
+lance-table = { path = "../lance-4060-rle/rust/lance-table" }
+parquet = "55.2.0"
+arrow = "55.2.0"
+arrow-array = "55.2.0"
+arrow-schema = "55.2.0"
+bytes = "1.8.0"
+rand = "0.8.5"
+tabled = "0.16.0"
+tokio = { version = "1.42.0", features = ["full"] }
+tempfile = "3.14.0"
+futures = "0.3.31"
+
+[dev-dependencies]
+divan = "0.1.15"
