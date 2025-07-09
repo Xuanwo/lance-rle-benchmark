@@ -66,21 +66,21 @@ fn main() {
             
             // Format size and ratio combined with best one marked
             let lance_str = if (lance_ratio_val - best_ratio).abs() < 0.0001 {
-                format!("{} (**{:.2}x**)", lance_size, lance_ratio_val)
+                format!("{lance_size} (**{lance_ratio_val:.2}x**)")
             } else {
-                format!("{} ({:.2}x)", lance_size, lance_ratio_val)
+                format!("{lance_size} ({lance_ratio_val:.2}x)")
             };
             
             let lance_rle_str = if (lance_rle_ratio_val - best_ratio).abs() < 0.0001 {
-                format!("{} (**{:.2}x**)", lance_rle_size, lance_rle_ratio_val)
+                format!("{lance_rle_size} (**{lance_rle_ratio_val:.2}x**)")
             } else {
-                format!("{} ({:.2}x)", lance_rle_size, lance_rle_ratio_val)
+                format!("{lance_rle_size} ({lance_rle_ratio_val:.2}x)")
             };
             
             let parquet_str = if (parquet_ratio_val - best_ratio).abs() < 0.0001 {
-                format!("{} (**{:.2}x**)", parquet_size, parquet_ratio_val)
+                format!("{parquet_size} (**{parquet_ratio_val:.2}x**)")
             } else {
-                format!("{} ({:.2}x)", parquet_size, parquet_ratio_val)
+                format!("{parquet_size} ({parquet_ratio_val:.2}x)")
             };
             
             rows.push(CompressionRow {

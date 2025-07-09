@@ -8,12 +8,12 @@ name = "main"
 harness = false
 
 [dependencies]
-lance = { path = "./lance-rle/rust/lance" }
-lance-core = { path = "./lance-rle/rust/lance-core" }
-lance-table = { path = "./lance-rle/rust/lance-table" }
-lance-io = { path = "./lance-rle/rust/lance-io" }
-lance-file = { path = "./lance-rle/rust/lance-file" }
-lance-encoding = { path = "./lance-rle/rust/lance-encoding" }
+lance = { package = "lance", git = "https://github.com/Xuanwo/lance", rev = "1856e2d" }
+lance-core = { package = "lance-core", git = "https://github.com/Xuanwo/lance", rev = "1856e2d" }
+lance-table = { package = "lance-table", git = "https://github.com/Xuanwo/lance", rev = "1856e2d" }
+lance-io = { package = "lance-io", git = "https://github.com/Xuanwo/lance", rev = "1856e2d" }
+lance-file = { package = "lance-file", git = "https://github.com/Xuanwo/lance", rev = "1856e2d" }
+lance-encoding = { package = "lance-encoding", git = "https://github.com/Xuanwo/lance", rev = "1856e2d" }
 object_store = "0.12.0"
 parquet = "55.2.0"
 arrow = "55.2.0"
