@@ -1,7 +1,7 @@
 use arrow_array::RecordBatch;
 use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::arrow::arrow_writer::ArrowWriter;
-use parquet::basic::{Compression, Encoding};
+use parquet::basic::Compression;
 use parquet::file::properties::WriterProperties;
 use std::fs::File;
 use tempfile::TempDir;
@@ -11,9 +11,12 @@ pub fn write_file(batch: RecordBatch) -> (TempDir, String) {
     let path = temp_dir.path().join("data.parquet");
     let file = File::create(&path).unwrap();
 
+    // Use Parquet's default encoding selection which automatically chooses:
+    // - RLE_DICTIONARY for columns with repeated values
+    // - DELTA_BINARY_PACKED for sorted integer columns
+    // - PLAIN for other cases
     let props = WriterProperties::builder()
         .set_compression(Compression::SNAPPY)
-        .set_encoding(Encoding::RLE)
         .build();
 
     let mut writer = ArrowWriter::try_new(file, batch.schema(), Some(props)).unwrap();
