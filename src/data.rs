@@ -6,77 +6,95 @@ use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug)]
 pub enum DataPattern {
-    Runs {
-        run_length: usize,
-        unique_values: usize,
+    /// High repetition - ideal for RLE
+    /// repetition_rate: percentage of values that repeat (0.0 to 1.0)
+    /// run_length: average length of repeated runs
+    HighRepetition { 
+        repetition_rate: f64, 
+        run_length: usize 
     },
-    Periodic {
-        period: usize,
-        amplitude: i32,
+    
+    /// Low repetition - worst case for RLE
+    /// unique_ratio: percentage of unique values (0.0 to 1.0)
+    LowRepetition { 
+        unique_ratio: f64 
     },
-    Sparse {
-        density: f64,
-    },
-    Monotonic {
-        step: i32,
-    },
-    Random,
 }
 
 impl DataPattern {
     pub fn generate(&self, size: usize) -> Vec<i32> {
         let mut rng = StdRng::seed_from_u64(42);
-
+        let mut data = Vec::with_capacity(size);
+        
         match self {
-            Self::Runs {
-                run_length,
-                unique_values,
-            } => {
-                let mut data = Vec::with_capacity(size);
-                let mut current_value = 0;
-                let mut remaining_in_run = 0;
-
-                while data.len() < size {
-                    if remaining_in_run == 0 {
-                        current_value = rng.gen_range(0..*unique_values as i32);
-                        remaining_in_run = rng.gen_range(1..=*run_length);
-                    }
-
-                    data.push(current_value);
-                    remaining_in_run -= 1;
-                }
-
-                data.truncate(size);
-                data
-            }
-
-            Self::Periodic { period, amplitude } => (0..size)
-                .map(|i| ((i % period) as i32) * amplitude / (*period as i32))
-                .collect(),
-
-            Self::Sparse { density } => (0..size)
-                .map(|_| {
-                    if rng.gen::<f64>() < *density {
-                        rng.gen_range(0..100)
+            Self::HighRepetition { repetition_rate, run_length } => {
+                // Generate data with high repetition
+                // Strategy: create runs of repeated values
+                let mut i = 0;
+                while i < size {
+                    if rng.gen::<f64>() < *repetition_rate {
+                        // Generate a run of repeated values
+                        let value = rng.gen_range(0..100); // Limited value range for more repetition
+                        let actual_run_length = if *run_length > 1 {
+                            rng.gen_range(1..=*run_length).min(size - i)
+                        } else {
+                            1
+                        };
+                        
+                        for _ in 0..actual_run_length {
+                            if i < size {
+                                data.push(value);
+                                i += 1;
+                            }
+                        }
                     } else {
-                        0
+                        // Generate a unique value
+                        data.push(rng.gen_range(1000..10000)); // Different range to ensure uniqueness
+                        i += 1;
                     }
-                })
-                .collect(),
-
-            Self::Monotonic { step } => (0..size).map(|i| (i as i32) * step).collect(),
-
-            Self::Random => (0..size).map(|_| rng.gen()).collect(),
+                }
+            }
+            
+            Self::LowRepetition { unique_ratio } => {
+                // Generate data with low repetition (high entropy)
+                let unique_count = (size as f64 * unique_ratio) as usize;
+                
+                if unique_count >= size {
+                    // All unique values
+                    for i in 0..size {
+                        data.push(i as i32);
+                    }
+                } else {
+                    // Mix of unique and some repeated values
+                    let mut values: Vec<i32> = (0..unique_count).map(|i| i as i32).collect();
+                    
+                    // Fill the rest with random selections from existing values
+                    while values.len() < size {
+                        let idx = rng.gen_range(0..unique_count);
+                        values.push(values[idx]);
+                    }
+                    
+                    // Shuffle to distribute repeated values
+                    use rand::seq::SliceRandom;
+                    values.shuffle(&mut rng);
+                    data = values;
+                }
+            }
         }
+        
+        data
     }
 
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> String {
         match self {
-            Self::Runs { .. } => "runs",
-            Self::Periodic { .. } => "periodic",
-            Self::Sparse { .. } => "sparse",
-            Self::Monotonic { .. } => "monotonic",
-            Self::Random => "random",
+            Self::HighRepetition { repetition_rate, run_length } => {
+                // Format as "high_rep_95pct_run100" for 95% repetition with run length 100
+                format!("high_rep_{}pct_run{}", (repetition_rate * 100.0) as u32, run_length)
+            }
+            Self::LowRepetition { unique_ratio } => {
+                // Format as "low_rep_90pct_unique" for 90% unique values
+                format!("low_rep_{}pct_unique", (unique_ratio * 100.0) as u32)
+            }
         }
     }
 }

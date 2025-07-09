@@ -21,17 +21,30 @@ fn main() {
     let mut rows = vec![];
 
     for pattern in [
-        DataPattern::Runs {
-            run_length: 100,
-            unique_values: 10,
+        // High repetition cases - ideal for RLE
+        DataPattern::HighRepetition {
+            repetition_rate: 0.99,  // 99% repeated values
+            run_length: 1000,       // Long runs
         },
-        DataPattern::Sparse { density: 0.1 },
-        DataPattern::Periodic {
-            period: 100,
-            amplitude: 1000,
+        DataPattern::HighRepetition {
+            repetition_rate: 0.95,  // 95% repeated values
+            run_length: 100,        // Medium runs
         },
-        DataPattern::Monotonic { step: 5 },
-        DataPattern::Random,
+        DataPattern::HighRepetition {
+            repetition_rate: 0.90,  // 90% repeated values
+            run_length: 10,         // Short runs
+        },
+        
+        // Low repetition cases - worst for RLE
+        DataPattern::LowRepetition {
+            unique_ratio: 1.0,      // 100% unique values
+        },
+        DataPattern::LowRepetition {
+            unique_ratio: 0.90,     // 90% unique values
+        },
+        DataPattern::LowRepetition {
+            unique_ratio: 0.50,     // 50% unique values
+        },
     ] {
         for size in [1_000, 100_000, 1_000_000] {
             let batch = generate_record_batch(&pattern, size);

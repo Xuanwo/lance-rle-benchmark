@@ -172,532 +172,71 @@ macro_rules! bench_take {
     };
 }
 
-// Write benchmarks
-bench_write!(
-    write_1k_runs,
-    "write/1k/runs",
-    1_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_write!(
-    write_1k_sparse,
-    "write/1k/sparse",
-    1_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_write!(
-    write_1k_periodic,
-    "write/1k/periodic",
-    1_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_write!(
-    write_1k_monotonic,
-    "write/1k/monotonic",
-    1_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_write!(
-    write_1k_random,
-    "write/1k/random",
-    1_000,
-    DataPattern::Random
-);
+// High repetition patterns
+const HIGH_REP_99: DataPattern = DataPattern::HighRepetition {
+    repetition_rate: 0.99,
+    run_length: 1000,
+};
 
-bench_write!(
-    write_10k_runs,
-    "write/10k/runs",
-    10_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_write!(
-    write_10k_sparse,
-    "write/10k/sparse",
-    10_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_write!(
-    write_10k_periodic,
-    "write/10k/periodic",
-    10_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_write!(
-    write_10k_monotonic,
-    "write/10k/monotonic",
-    10_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_write!(
-    write_10k_random,
-    "write/10k/random",
-    10_000,
-    DataPattern::Random
-);
+const HIGH_REP_95: DataPattern = DataPattern::HighRepetition {
+    repetition_rate: 0.95,
+    run_length: 100,
+};
 
-bench_write!(
-    write_100k_runs,
-    "write/100k/runs",
-    100_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_write!(
-    write_100k_sparse,
-    "write/100k/sparse",
-    100_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_write!(
-    write_100k_periodic,
-    "write/100k/periodic",
-    100_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_write!(
-    write_100k_monotonic,
-    "write/100k/monotonic",
-    100_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_write!(
-    write_100k_random,
-    "write/100k/random",
-    100_000,
-    DataPattern::Random
-);
+const HIGH_REP_90: DataPattern = DataPattern::HighRepetition {
+    repetition_rate: 0.90,
+    run_length: 10,
+};
 
-bench_write!(
-    write_1m_runs,
-    "write/1m/runs",
-    1_000_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_write!(
-    write_1m_sparse,
-    "write/1m/sparse",
-    1_000_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_write!(
-    write_1m_periodic,
-    "write/1m/periodic",
-    1_000_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_write!(
-    write_1m_monotonic,
-    "write/1m/monotonic",
-    1_000_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_write!(
-    write_1m_random,
-    "write/1m/random",
-    1_000_000,
-    DataPattern::Random
-);
+// Low repetition patterns
+const LOW_REP_100: DataPattern = DataPattern::LowRepetition { unique_ratio: 1.0 };
+const LOW_REP_90: DataPattern = DataPattern::LowRepetition { unique_ratio: 0.90 };
+const LOW_REP_50: DataPattern = DataPattern::LowRepetition { unique_ratio: 0.50 };
 
-// Read benchmarks
-bench_read!(
-    read_1k_runs,
-    "read/1k/runs",
-    1_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_read!(
-    read_1k_sparse,
-    "read/1k/sparse",
-    1_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_read!(
-    read_1k_periodic,
-    "read/1k/periodic",
-    1_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_read!(
-    read_1k_monotonic,
-    "read/1k/monotonic",
-    1_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_read!(read_1k_random, "read/1k/random", 1_000, DataPattern::Random);
+// Write benchmarks - 100K elements
+bench_write!(write_100k_high_rep_99, "write/100k/high_rep_99pct", 100_000, HIGH_REP_99);
+bench_write!(write_100k_high_rep_95, "write/100k/high_rep_95pct", 100_000, HIGH_REP_95);
+bench_write!(write_100k_high_rep_90, "write/100k/high_rep_90pct", 100_000, HIGH_REP_90);
+bench_write!(write_100k_low_rep_100, "write/100k/low_rep_100pct", 100_000, LOW_REP_100);
+bench_write!(write_100k_low_rep_90, "write/100k/low_rep_90pct", 100_000, LOW_REP_90);
+bench_write!(write_100k_low_rep_50, "write/100k/low_rep_50pct", 100_000, LOW_REP_50);
 
-bench_read!(
-    read_10k_runs,
-    "read/10k/runs",
-    10_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_read!(
-    read_10k_sparse,
-    "read/10k/sparse",
-    10_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_read!(
-    read_10k_periodic,
-    "read/10k/periodic",
-    10_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_read!(
-    read_10k_monotonic,
-    "read/10k/monotonic",
-    10_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_read!(
-    read_10k_random,
-    "read/10k/random",
-    10_000,
-    DataPattern::Random
-);
+// Write benchmarks - 1M elements
+bench_write!(write_1m_high_rep_99, "write/1m/high_rep_99pct", 1_000_000, HIGH_REP_99);
+bench_write!(write_1m_high_rep_95, "write/1m/high_rep_95pct", 1_000_000, HIGH_REP_95);
+bench_write!(write_1m_high_rep_90, "write/1m/high_rep_90pct", 1_000_000, HIGH_REP_90);
+bench_write!(write_1m_low_rep_100, "write/1m/low_rep_100pct", 1_000_000, LOW_REP_100);
+bench_write!(write_1m_low_rep_90, "write/1m/low_rep_90pct", 1_000_000, LOW_REP_90);
+bench_write!(write_1m_low_rep_50, "write/1m/low_rep_50pct", 1_000_000, LOW_REP_50);
 
-bench_read!(
-    read_100k_runs,
-    "read/100k/runs",
-    100_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_read!(
-    read_100k_sparse,
-    "read/100k/sparse",
-    100_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_read!(
-    read_100k_periodic,
-    "read/100k/periodic",
-    100_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_read!(
-    read_100k_monotonic,
-    "read/100k/monotonic",
-    100_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_read!(
-    read_100k_random,
-    "read/100k/random",
-    100_000,
-    DataPattern::Random
-);
+// Read benchmarks - 100K elements
+bench_read!(read_100k_high_rep_99, "read/100k/high_rep_99pct", 100_000, HIGH_REP_99);
+bench_read!(read_100k_high_rep_95, "read/100k/high_rep_95pct", 100_000, HIGH_REP_95);
+bench_read!(read_100k_high_rep_90, "read/100k/high_rep_90pct", 100_000, HIGH_REP_90);
+bench_read!(read_100k_low_rep_100, "read/100k/low_rep_100pct", 100_000, LOW_REP_100);
+bench_read!(read_100k_low_rep_90, "read/100k/low_rep_90pct", 100_000, LOW_REP_90);
+bench_read!(read_100k_low_rep_50, "read/100k/low_rep_50pct", 100_000, LOW_REP_50);
 
-bench_read!(
-    read_1m_runs,
-    "read/1m/runs",
-    1_000_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    }
-);
-bench_read!(
-    read_1m_sparse,
-    "read/1m/sparse",
-    1_000_000,
-    DataPattern::Sparse { density: 0.1 }
-);
-bench_read!(
-    read_1m_periodic,
-    "read/1m/periodic",
-    1_000_000,
-    DataPattern::Periodic {
-        period: 100,
-        amplitude: 1000
-    }
-);
-bench_read!(
-    read_1m_monotonic,
-    "read/1m/monotonic",
-    1_000_000,
-    DataPattern::Monotonic { step: 5 }
-);
-bench_read!(
-    read_1m_random,
-    "read/1m/random",
-    1_000_000,
-    DataPattern::Random
-);
+// Read benchmarks - 1M elements
+bench_read!(read_1m_high_rep_99, "read/1m/high_rep_99pct", 1_000_000, HIGH_REP_99);
+bench_read!(read_1m_high_rep_95, "read/1m/high_rep_95pct", 1_000_000, HIGH_REP_95);
+bench_read!(read_1m_high_rep_90, "read/1m/high_rep_90pct", 1_000_000, HIGH_REP_90);
+bench_read!(read_1m_low_rep_100, "read/1m/low_rep_100pct", 1_000_000, LOW_REP_100);
+bench_read!(read_1m_low_rep_90, "read/1m/low_rep_90pct", 1_000_000, LOW_REP_90);
+bench_read!(read_1m_low_rep_50, "read/1m/low_rep_50pct", 1_000_000, LOW_REP_50);
 
-// Take benchmarks
-bench_take!(
-    take_1k_runs_1pct,
-    "take/1k/runs/1%",
-    1_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.01
-);
-bench_take!(
-    take_1k_runs_10pct,
-    "take/1k/runs/10%",
-    1_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.1
-);
-bench_take!(
-    take_1k_runs_50pct,
-    "take/1k/runs/50%",
-    1_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.5
-);
-bench_take!(
-    take_1k_sparse_1pct,
-    "take/1k/sparse/1%",
-    1_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.01
-);
-bench_take!(
-    take_1k_sparse_10pct,
-    "take/1k/sparse/10%",
-    1_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.1
-);
-bench_take!(
-    take_1k_random_1pct,
-    "take/1k/random/1%",
-    1_000,
-    DataPattern::Random,
-    0.01
-);
-bench_take!(
-    take_1k_random_10pct,
-    "take/1k/random/10%",
-    1_000,
-    DataPattern::Random,
-    0.1
-);
+// Take benchmarks - 100K elements, 10% take
+bench_take!(take_100k_high_rep_99, "take/100k/high_rep_99pct/10pct", 100_000, HIGH_REP_99, 0.1);
+bench_take!(take_100k_high_rep_95, "take/100k/high_rep_95pct/10pct", 100_000, HIGH_REP_95, 0.1);
+bench_take!(take_100k_high_rep_90, "take/100k/high_rep_90pct/10pct", 100_000, HIGH_REP_90, 0.1);
+bench_take!(take_100k_low_rep_100, "take/100k/low_rep_100pct/10pct", 100_000, LOW_REP_100, 0.1);
+bench_take!(take_100k_low_rep_90, "take/100k/low_rep_90pct/10pct", 100_000, LOW_REP_90, 0.1);
+bench_take!(take_100k_low_rep_50, "take/100k/low_rep_50pct/10pct", 100_000, LOW_REP_50, 0.1);
 
-bench_take!(
-    take_10k_runs_1pct,
-    "take/10k/runs/1%",
-    10_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.01
-);
-bench_take!(
-    take_10k_runs_10pct,
-    "take/10k/runs/10%",
-    10_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.1
-);
-bench_take!(
-    take_10k_runs_50pct,
-    "take/10k/runs/50%",
-    10_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.5
-);
-bench_take!(
-    take_10k_sparse_1pct,
-    "take/10k/sparse/1%",
-    10_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.01
-);
-bench_take!(
-    take_10k_sparse_10pct,
-    "take/10k/sparse/10%",
-    10_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.1
-);
-bench_take!(
-    take_10k_random_1pct,
-    "take/10k/random/1%",
-    10_000,
-    DataPattern::Random,
-    0.01
-);
-bench_take!(
-    take_10k_random_10pct,
-    "take/10k/random/10%",
-    10_000,
-    DataPattern::Random,
-    0.1
-);
-
-bench_take!(
-    take_100k_runs_1pct,
-    "take/100k/runs/1%",
-    100_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.01
-);
-bench_take!(
-    take_100k_runs_10pct,
-    "take/100k/runs/10%",
-    100_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.1
-);
-bench_take!(
-    take_100k_runs_50pct,
-    "take/100k/runs/50%",
-    100_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.5
-);
-bench_take!(
-    take_100k_sparse_1pct,
-    "take/100k/sparse/1%",
-    100_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.01
-);
-bench_take!(
-    take_100k_sparse_10pct,
-    "take/100k/sparse/10%",
-    100_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.1
-);
-bench_take!(
-    take_100k_random_1pct,
-    "take/100k/random/1%",
-    100_000,
-    DataPattern::Random,
-    0.01
-);
-bench_take!(
-    take_100k_random_10pct,
-    "take/100k/random/10%",
-    100_000,
-    DataPattern::Random,
-    0.1
-);
-
-bench_take!(
-    take_1m_runs_1pct,
-    "take/1m/runs/1%",
-    1_000_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.01
-);
-bench_take!(
-    take_1m_runs_10pct,
-    "take/1m/runs/10%",
-    1_000_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.1
-);
-bench_take!(
-    take_1m_runs_50pct,
-    "take/1m/runs/50%",
-    1_000_000,
-    DataPattern::Runs {
-        run_length: 100,
-        unique_values: 10
-    },
-    0.5
-);
-bench_take!(
-    take_1m_sparse_1pct,
-    "take/1m/sparse/1%",
-    1_000_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.01
-);
-bench_take!(
-    take_1m_sparse_10pct,
-    "take/1m/sparse/10%",
-    1_000_000,
-    DataPattern::Sparse { density: 0.1 },
-    0.1
-);
-bench_take!(
-    take_1m_random_1pct,
-    "take/1m/random/1%",
-    1_000_000,
-    DataPattern::Random,
-    0.01
-);
-bench_take!(
-    take_1m_random_10pct,
-    "take/1m/random/10%",
-    1_000_000,
-    DataPattern::Random,
-    0.1
-);
+// Take benchmarks - 1M elements, 10% take
+bench_take!(take_1m_high_rep_99, "take/1m/high_rep_99pct/10pct", 1_000_000, HIGH_REP_99, 0.1);
+bench_take!(take_1m_high_rep_95, "take/1m/high_rep_95pct/10pct", 1_000_000, HIGH_REP_95, 0.1);
+bench_take!(take_1m_high_rep_90, "take/1m/high_rep_90pct/10pct", 1_000_000, HIGH_REP_90, 0.1);
+bench_take!(take_1m_low_rep_100, "take/1m/low_rep_100pct/10pct", 1_000_000, LOW_REP_100, 0.1);
+bench_take!(take_1m_low_rep_90, "take/1m/low_rep_90pct/10pct", 1_000_000, LOW_REP_90, 0.1);
+bench_take!(take_1m_low_rep_50, "take/1m/low_rep_50pct/10pct", 1_000_000, LOW_REP_50, 0.1);
