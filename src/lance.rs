@@ -1,12 +1,16 @@
 use arrow_array::RecordBatch;
 use arrow_schema::{Field, Schema};
+use futures::StreamExt;
+use lance_core::cache::LanceCache;
 use lance_core::datatypes::{Schema as LanceSchema, COMPRESSION_META_KEY};
-use lance_file::reader::FileReader;
-use lance_file::writer::{FileWriter, FileWriterOptions};
+use lance_encoding::decoder::{DecoderPlugins, FilterExpression};
+use lance_encoding::version::LanceFileVersion;
+use lance_file::v2::reader::{FileReader, FileReaderOptions, ReaderProjection};
+use lance_file::v2::writer::{FileWriter, FileWriterOptions};
 use lance_io::object_store::ObjectStore;
+use lance_io::scheduler::{ScanScheduler, SchedulerConfig};
+use lance_io::utils::CachedFileSize;
 use lance_io::ReadBatchParams;
-use lance_table::format::SelfDescribingFileReader;
-use lance_table::io::manifest::ManifestDescribing;
 use object_store::path::Path;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -39,14 +43,18 @@ pub async fn write_bytes(batch: RecordBatch, _use_v2: bool, use_rle: bool) -> Ve
     let object_store = Arc::new(ObjectStore::memory());
     let path = Path::from("data.lance");
 
-    // Write the file
-    let options = FileWriterOptions::default();
-    let mut writer =
-        FileWriter::<ManifestDescribing>::try_new(&object_store, &path, lance_schema, &options)
-            .await
-            .unwrap();
+    // Write the file using v2 writer
+    let options = FileWriterOptions {
+        format_version: Some(LanceFileVersion::V2_1),
+        ..Default::default()
+    };
 
-    writer.write(&[batch_with_compression]).await.unwrap();
+    // Use custom encoding strategy for RLE
+
+    let object_writer = object_store.create(&path).await.unwrap();
+    let mut writer = FileWriter::try_new(object_writer, lance_schema, options).unwrap();
+
+    writer.write_batch(&batch_with_compression).await.unwrap();
     writer.finish().await.unwrap();
 
     // Read back the bytes
@@ -73,24 +81,48 @@ pub async fn read_bytes(bytes: &[u8]) -> Vec<RecordBatch> {
         .await
         .unwrap();
 
-    // Read the file
-    let reader = FileReader::try_new_self_described(&object_store, &path, None)
+    // Create scheduler and open file
+    let scheduler = ScanScheduler::new(
+        object_store.clone(),
+        SchedulerConfig::max_bandwidth(&object_store),
+    );
+    let file_scheduler = scheduler
+        .open_file(&path, &CachedFileSize::unknown())
         .await
         .unwrap();
-    let schema = reader.schema();
+
+    // Open the file reader
+    let cache = LanceCache::no_cache();
+    let reader = FileReader::try_open(
+        file_scheduler,
+        None,
+        Arc::<DecoderPlugins>::default(),
+        &cache,
+        FileReaderOptions::default(),
+    )
+    .await
+    .unwrap();
+
+    let num_rows = reader.num_rows();
+    let projection =
+        ReaderProjection::from_whole_schema(reader.schema(), reader.metadata().version());
 
     // Read all data
-    let num_batches = reader.num_batches();
-    let mut batches = Vec::new();
+    let stream = reader
+        .read_tasks(
+            ReadBatchParams::Range(0..num_rows as usize),
+            1024,
+            Some(projection),
+            FilterExpression::no_filter(),
+        )
+        .unwrap();
 
-    for batch_id in 0..num_batches {
-        let batch = reader
-            .read_batch(batch_id as i32, ReadBatchParams::RangeFull, schema)
-            .await
-            .unwrap();
+    let mut batches = Vec::new();
+    futures::pin_mut!(stream);
+    while let Some(batch_task) = stream.next().await {
+        let batch = batch_task.task.await.unwrap();
         batches.push(batch);
     }
-
     batches
 }
 
@@ -106,13 +138,55 @@ pub async fn take_rows_from_bytes(bytes: &[u8], indices: &[usize]) -> RecordBatc
         .await
         .unwrap();
 
-    // Read the file
-    let reader = FileReader::try_new_self_described(&object_store, &path, None)
+    // Create scheduler and open file
+    let scheduler = ScanScheduler::new(
+        object_store.clone(),
+        SchedulerConfig::max_bandwidth(&object_store),
+    );
+    let file_scheduler = scheduler
+        .open_file(&path, &CachedFileSize::unknown())
         .await
         .unwrap();
 
-    // Take specific rows
+    // Open the file reader
+    let cache = LanceCache::no_cache();
+    let reader = FileReader::try_open(
+        file_scheduler,
+        None,
+        Arc::<DecoderPlugins>::default(),
+        &cache,
+        FileReaderOptions::default(),
+    )
+    .await
+    .unwrap();
+
+    let projection =
+        ReaderProjection::from_whole_schema(reader.schema(), reader.metadata().version());
+
+    // Take specific rows using indices
     let indices_u32: Vec<u32> = indices.iter().map(|&i| i as u32).collect();
-    let schema = reader.schema();
-    reader.take(&indices_u32, schema).await.unwrap()
+    let indices_array = arrow_array::UInt32Array::from(indices_u32);
+    let stream = reader
+        .read_tasks(
+            ReadBatchParams::Indices(indices_array),
+            1024,
+            Some(projection),
+            FilterExpression::no_filter(),
+        )
+        .unwrap();
+
+    let mut batches = Vec::new();
+    futures::pin_mut!(stream);
+    while let Some(batch_task) = stream.next().await {
+        let batch = batch_task.task.await.unwrap();
+        batches.push(batch);
+    }
+
+    // Should return a single batch for take operation
+    if batches.len() == 1 {
+        batches.into_iter().next().unwrap()
+    } else {
+        // Concatenate if multiple batches
+        arrow_select::concat::concat_batches(&batches[0].schema(), &batches).unwrap()
+    }
 }
