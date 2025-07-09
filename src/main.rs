@@ -75,19 +75,29 @@ fn get_dir_size(path: &str) -> usize {
     if path.is_file() {
         fs::metadata(path).map(|m| m.len() as usize).unwrap_or(0)
     } else if path.is_dir() {
-        fs::read_dir(path)
-            .map(|entries| {
-                entries
-                    .filter_map(|e| e.ok())
-                    .map(|e| {
-                        fs::metadata(e.path())
-                            .map(|m| m.len() as usize)
-                            .unwrap_or(0)
-                    })
-                    .sum()
-            })
-            .unwrap_or(0)
+        get_dir_size_recursive(path)
     } else {
         0
     }
+}
+
+fn get_dir_size_recursive(dir: &Path) -> usize {
+    let mut total_size = 0;
+    
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            let metadata = fs::metadata(&path).ok();
+            
+            if let Some(metadata) = metadata {
+                if metadata.is_file() {
+                    total_size += metadata.len() as usize;
+                } else if metadata.is_dir() {
+                    total_size += get_dir_size_recursive(&path);
+                }
+            }
+        }
+    }
+    
+    total_size
 }
