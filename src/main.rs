@@ -1,17 +1,12 @@
 use lance_rle_benchmark::{data::*, lance, parquet};
-use tabled::{Table, Tabled};
 use tokio::runtime::Runtime;
 
-#[derive(Tabled)]
 struct CompressionRow {
     pattern: String,
     size: usize,
-    lance_size: usize,
-    lance_ratio: f64,
-    lance_rle_size: usize,
-    lance_rle_ratio: f64,
-    parquet_size: usize,
-    parquet_ratio: f64,
+    lance: String,
+    lance_rle: String,
+    parquet: String,
 }
 
 fn main() {
@@ -62,19 +57,57 @@ fn main() {
             let parquet_bytes = parquet::write_bytes(batch);
             let parquet_size = parquet_bytes.len();
 
+            let lance_ratio_val = original_size as f64 / lance_size as f64;
+            let lance_rle_ratio_val = original_size as f64 / lance_rle_size as f64;
+            let parquet_ratio_val = original_size as f64 / parquet_size as f64;
+            
+            // Find the best compression ratio
+            let best_ratio = lance_ratio_val.max(lance_rle_ratio_val).max(parquet_ratio_val);
+            
+            // Format size and ratio combined with best one marked
+            let lance_str = if (lance_ratio_val - best_ratio).abs() < 0.0001 {
+                format!("{} (**{:.2}x**)", lance_size, lance_ratio_val)
+            } else {
+                format!("{} ({:.2}x)", lance_size, lance_ratio_val)
+            };
+            
+            let lance_rle_str = if (lance_rle_ratio_val - best_ratio).abs() < 0.0001 {
+                format!("{} (**{:.2}x**)", lance_rle_size, lance_rle_ratio_val)
+            } else {
+                format!("{} ({:.2}x)", lance_rle_size, lance_rle_ratio_val)
+            };
+            
+            let parquet_str = if (parquet_ratio_val - best_ratio).abs() < 0.0001 {
+                format!("{} (**{:.2}x**)", parquet_size, parquet_ratio_val)
+            } else {
+                format!("{} ({:.2}x)", parquet_size, parquet_ratio_val)
+            };
+            
             rows.push(CompressionRow {
                 pattern: pattern.name().to_string(),
                 size,
-                lance_size,
-                lance_ratio: original_size as f64 / lance_size as f64,
-                lance_rle_size,
-                lance_rle_ratio: original_size as f64 / lance_rle_size as f64,
-                parquet_size,
-                parquet_ratio: original_size as f64 / parquet_size as f64,
+                lance: lance_str,
+                lance_rle: lance_rle_str,
+                parquet: parquet_str,
             });
         }
     }
 
-    let table = Table::new(rows);
-    println!("{table}");
+    // Print markdown table header
+    println!("\n| Pattern | Size | Lance (bitpacking) | Lance (RLE) | Parquet |");
+    println!("|---------|------|--------------------|-------------|---------|");
+    
+    // Print each row
+    for row in rows {
+        println!(
+            "| {} | {} | {} | {} | {} |",
+            row.pattern,
+            row.size,
+            row.lance,
+            row.lance_rle,
+            row.parquet
+        );
+    }
+    
+    println!("\n**Note**: Best compression ratio for each test is marked with **bold**.");
 }
