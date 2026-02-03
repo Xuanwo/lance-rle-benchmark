@@ -20,7 +20,7 @@ arrow = "55.2.0"
 arrow-array = "55.2.0"
 arrow-schema = "55.2.0"
 arrow-select = "55.2.0"
-bytes = "1.8.0"
+bytes = "1.11.1"
 rand = "0.8.5"
 tokio = { version = "1.42.0", features = ["full"] }
 futures = "0.3.31"
